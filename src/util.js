@@ -152,7 +152,10 @@ var defaultModemap = {
   'js': 'javascript',
   'less': 'less',
   'styl': 'stylus',
-  'coffee': 'coffeescript'
+  'coffee': 'coffeescript',
+  'json': 'application/json',
+  'liquid': 'liquid',
+  'mson': 'json'
 }
 
 function getMode (type = '', file = '', customModemap = {}) {

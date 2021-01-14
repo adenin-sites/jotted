@@ -1,16 +1,23 @@
 /* jotted
  */
 
+import 'regenerator-runtime/runtime'
 import * as util from './util.js'
 import * as template from './template.js'
 import * as plugin from './plugin.js'
 import PubSoup from './pubsoup.js'
+
+import * as ACData from 'adaptivecards-templating'
+import * as AdaptiveCards from 'adaptivecards'
 
 class Jotted {
   constructor ($jottedContainer, opts) {
     if (!$jottedContainer) {
       throw new Error('Can\'t find Jotted container.')
     }
+
+    console.log(new ACData.Template({}))
+    console.log(new AdaptiveCards.AdaptiveCard())
 
     // private data
     var _private = {}
@@ -40,11 +47,22 @@ class Jotted {
       options.plugins.push('scriptless')
     }
 
+    // get array of types from the input options and create one pane for each
+    let selectedTypes = []
+    options.files.forEach(function (file) {
+      selectedTypes.push(file.type)
+    })
+
+    // based on input (arr[0]) and template (arr[1]) types, calculate result type
+    // json + json = json (or adaptive card)
+    // json + liquid = json (or adaptive card)
+    // markdown + MSON = html
+    this._set('resultType', 'json')
+
     // cached content for the change method.
     this._set('cachedContent', {
-      html: null,
-      css: null,
-      js: null
+      input: null,
+      template: null
     })
 
     // PubSoup
@@ -67,7 +85,7 @@ class Jotted {
 
     // DOM
     var $container = this._set('$container', $jottedContainer)
-    $container.innerHTML = template.container()
+    $container.innerHTML = template.container(selectedTypes[0], selectedTypes[1], this._get('resultType'))
     util.addClass($container, template.containerClass())
 
     // default pane
@@ -77,8 +95,8 @@ class Jotted {
     // status nodes
     this._set('$status', {})
 
-    for (let type of [ 'html', 'css', 'js' ]) {
-      this.markup(type)
+    for (let [index, type] of selectedTypes.entries()) {
+      this.markup(index, type)
     }
 
     // textarea change events.
@@ -97,29 +115,35 @@ class Jotted {
     this.paneActive = this._get('paneActive')
 
     // init plugins
-    this._set('plugins', {})
+    this.plugins = this._set('plugins', {})
     plugin.init.call(this)
 
     // load files
-    for (let type of [ 'html', 'css', 'js' ]) {
-      this.load(type)
+    for (let [index, type] of selectedTypes.entries()) {
+      this.load(index, type)
     }
 
     // show all tabs, even if empty
     if (options.showBlank) {
-      for (let type of [ 'html', 'css', 'js' ]) {
+      for (let type of selectedTypes) {
         util.addClass($container, template.hasFileClass(type))
       }
     }
+
+    this.on('change', (params, callback) => {
+      this._get('cachedContent')[params.role] = params.content
+
+      callback(null, params)
+    }, 10)
   }
 
-  findFile (type) {
+  findFile (index, type) {
     var file = {}
     var options = this._get('options')
 
     for (let fileIndex in options.files) {
       let file = options.files[fileIndex]
-      if (file.type === type) {
+      if (file.type === type && parseInt(fileIndex) === index) {
         return file
       }
     }
@@ -127,14 +151,14 @@ class Jotted {
     return file
   }
 
-  markup (type) {
+  markup (index, type) {
     var $container = this._get('$container')
-    var $parent = $container.querySelector(`.jotted-pane-${type}`)
+    var $parent = $container.querySelectorAll(`.jotted-pane[data-jotted-type=${type}]`)[index]
     // create the markup for an editor
-    var file = this.findFile(type)
+    var file = this.findFile(index, type)
 
     var $editor = document.createElement('div')
-    $editor.innerHTML = template.editorContent(type, file.url)
+    $editor.innerHTML = template.editorContent(type, file.role, file.url)
     $editor.className = template.editorClass(type)
 
     $parent.appendChild($editor)
@@ -149,10 +173,10 @@ class Jotted {
     }
   }
 
-  load (type) {
+  load (index, type) {
     // create the markup for an editor
-    var file = this.findFile(type)
-    var $textarea = this._get('$container').querySelector(`.jotted-pane-${type} textarea`)
+    var file = this.findFile(index, type)
+    var $textarea = this._get('$container').querySelectorAll(`.jotted-pane[data-jotted-type=${type}]`)[index].querySelector('textarea')
 
     // file as string
     if (typeof file.content !== 'undefined') {
@@ -200,27 +224,34 @@ class Jotted {
     })
   }
 
+  getValue (role) {
+    return this._get('cachedContent')[role]
+  }
+
   change (e) {
+    var role = util.data(e.target, 'jotted-role')
     var type = util.data(e.target, 'jotted-type')
-    if (!type) {
+
+    if (!role) {
       return
     }
 
     // don't trigger change if the content hasn't changed.
     // eg. when blurring the textarea.
     var cachedContent = this._get('cachedContent')
-    if (cachedContent[type] === e.target.value) {
+    if (cachedContent[role] === e.target.value) {
       return
     }
 
     // cache latest content
-    cachedContent[type] = e.target.value
+    cachedContent[role] = e.target.value
 
     // trigger the change event
     this.trigger('change', {
       type: type,
+      role: role,
       file: util.data(e.target, 'jotted-file'),
-      content: cachedContent[type]
+      content: cachedContent[role]
     })
   }
 
@@ -229,7 +260,7 @@ class Jotted {
   }
 
   pane (e) {
-    if (!util.data(e.target, 'jotted-type')) {
+    if (!util.data(e.target, 'jotted-role')) {
       return
     }
 
@@ -237,7 +268,7 @@ class Jotted {
     var paneActive = this._get('paneActive')
     util.removeClass($container, template.paneActiveClass(paneActive))
 
-    paneActive = this._set('paneActive', util.data(e.target, 'jotted-type'))
+    paneActive = this._set('paneActive', util.data(e.target, 'jotted-role'))
     util.addClass($container, template.paneActiveClass(paneActive))
 
     e.preventDefault()

@@ -39,7 +39,7 @@ function init () {
     }
 
     Plugin = find(pluginName)
-    this._get('plugins')[plugin] = new Plugin(this, pluginOptions)
+    this._get('plugins')[pluginName] = new Plugin(this, pluginOptions)
 
     util.addClass(this._get('$container'), template.pluginClass(pluginName))
   })

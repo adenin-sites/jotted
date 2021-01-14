@@ -4,7 +4,11 @@ var lrSnippet = require('connect-livereload')({ port: LIVERELOAD_PORT })
 var mountFolder = function (connect, dir) {
   return connect.static(require('path').resolve(dir))
 };
-var babel = require('rollup-plugin-babel')
+
+const commonjs = require('@rollup/plugin-commonjs')
+const json = require('@rollup/plugin-json')
+const resolve = require('@rollup/plugin-node-resolve').nodeResolve
+const babel = require('rollup-plugin-babel')
 
 module.exports = function (grunt) {
   // load all grunt tasks
@@ -103,16 +107,29 @@ module.exports = function (grunt) {
     rollup: {
       options: {
         sourceMap: true,
-        plugins: [
-          babel({
-            exclude: 'node_modules/**'
-          })
-        ],
+        plugins: function() {
+          return [
+            resolve({
+              browser: true,
+            }),
+            commonjs({
+              //include: 'node_modules/**',
+              //dynamicRequireTargets: [
+              //  'node_modules/adaptivecards-templating/*.js'
+              //]
+              
+            }),
+            json(),
+            babel({
+              //exclude: 'node_modules/**'
+            }),
+          ]
+        },
         format: 'umd',
-        moduleName: 'Jotted'
+        name: 'Jotted',
       },
       files: {
-        src: 'src/core.js',
+        src: ['src/core.js'],
         dest: 'jotted.js'
       }
     },

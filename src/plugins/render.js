@@ -3,88 +3,89 @@
  */
 
 import * as util from '../util.js'
+import * as ACData from 'adaptivecards-templating'
+import * as AdaptiveCards from 'adaptivecards'
 
 export default class PluginRender {
   constructor (jotted, options) {
     options = util.extend(options, {})
 
-    // iframe srcdoc support
-    var supportSrcdoc = !!('srcdoc' in document.createElement('iframe'))
-    var $resultFrame = jotted.$container.querySelector('.jotted-pane-result iframe')
-
+    var $resultFrame = jotted.$container.querySelector('.jotted-pane-result textarea')
     var frameContent = ''
 
     // cached content
     var content = {
-      html: '',
-      css: '',
-      js: ''
+      input: '',
+      template: ''
     }
 
-    // catch domready events from the iframe
-    window.addEventListener('message', this.domready.bind(this))
-
-    // render on each change
-    jotted.on('change', this.change.bind(this), 100)
-
     // public
-    this.supportSrcdoc = supportSrcdoc
+    this.jotted = jotted
     this.content = content
     this.frameContent = frameContent
     this.$resultFrame = $resultFrame
+    this.firstRender = true
 
-    this.callbacks = []
-    this.index = 0
-
-    this.lastCallback = () => {}
+    // render on each change
+    jotted.on('change', this.change.bind(this), 1)
   }
 
-  template (style = '', body = '', script = '') {
-    return `
-      <!doctype html>
-      <html>
-        <head>
-          <script>
-            (function () {
-              window.addEventListener('DOMContentLoaded', function () {
-                window.parent.postMessage(JSON.stringify({
-                  type: 'jotted-dom-ready'
-                }), '*')
-              })
-            }())
-          </script>
+  template (input = '', template = '') {
+    // need both input and template to show a result
+    if (!input || !template) {
+      return ''
+    }
 
-          <style>${style}</style>
-        </head>
-        <body>
-          ${body}
+    // calculate the output based on result type
+    var resultType = util.data(this.$resultFrame, 'jotted-type')
 
-          <!--
-            Jotted:
-            Empty script tag prevents malformed HTML from breaking the next script.
-          -->
-          <script></script>
-          <script>${script}</script>
-        </body>
-      </html>
-    `
+    if (resultType === 'json') {
+      // use adaptive cards templating tool
+      var cardData, cardTemplate
+
+      try {
+        cardData = JSON.parse(input)
+      } catch (e) {
+        console.log("bad json")
+      }
+
+      try {
+        cardTemplate = JSON.parse(template)
+      } catch (e) {
+        console.log("bad json")
+      }
+
+      cardTemplate = new ACData.Template(cardTemplate)
+
+      var card = cardTemplate.expand({
+        $root: cardData
+      })
+
+      return JSON.stringify(card, null, 4);
+
+      // for html Rendering
+
+      // var adaptiveCard = new AdaptiveCards.AdaptiveCard()
+      // adaptiveCard.parse(card)
+
+      // var renderedCard = adaptiveCard.render()
+
+      // return adaptiveCard
+    } else if (resultType === 'html') {
+      // do something
+      return ''
+    } else {
+      return ''
+    }
   }
 
   change (params, callback) {
     // cache manipulated content
-    this.content[params.type] = params.content
+    this.content[params.role] = params.content
 
     // check existing and to-be-rendered content
     var oldFrameContent = this.frameContent
-    this.frameContent = this.template(this.content['css'], this.content['html'], this.content['js'])
-
-    // cache the current callback as global,
-    // so we can call it from the message callback.
-    this.lastCallback = () => {
-      this.lastCallback = () => {}
-
-      callback(null, params)
-    }
+    this.frameContent = this.template(this.content['input'], this.content['template'])
 
     // don't render if previous and new frame content are the same.
     // mostly for the `play` plugin,
@@ -95,52 +96,10 @@ export default class PluginRender {
       return
     }
 
-    if (this.supportSrcdoc) {
-      // srcdoc in unreliable in Chrome.
-      // https://github.com/ghinda/jotted/issues/23
+    this.$resultFrame.value = this.frameContent
+    var editor = this.jotted.plugins.codemirror.editor.result // get the results pane cmeditor object
+    editor.setValue(this.frameContent) // set the value in the editor
 
-      // re-create the iframe on each change,
-      // to discard the previously loaded scripts.
-      var $newResultFrame = document.createElement('iframe')
-      this.$resultFrame.parentNode.replaceChild($newResultFrame, this.$resultFrame)
-      this.$resultFrame = $newResultFrame
-
-      this.$resultFrame.contentWindow.document.open()
-      this.$resultFrame.contentWindow.document.write(this.frameContent)
-      this.$resultFrame.contentWindow.document.close()
-    } else {
-      // older browsers without iframe srcset support (IE9).
-      this.$resultFrame.setAttribute('data-srcdoc', this.frameContent)
-
-      // tips from https://github.com/jugglinmike/srcdoc-polyfill
-      // Copyright (c) 2012 Mike Pennisi
-      // Licensed under the MIT license.
-      var jsUrl = 'javascript:window.frameElement.getAttribute("data-srcdoc");'
-
-      this.$resultFrame.setAttribute('src', jsUrl)
-
-      // Explicitly set the iFrame's window.location for
-      // compatibility with IE9, which does not react to changes in
-      // the `src` attribute when it is a `javascript:` URL.
-      if (this.$resultFrame.contentWindow) {
-        this.$resultFrame.contentWindow.location = jsUrl
-      }
-    }
-  }
-
-  domready (e) {
-    // only catch messages from the iframe
-    if (e.source !== this.$resultFrame.contentWindow) {
-      return
-    }
-
-    var data = {}
-    try {
-      data = JSON.parse(e.data)
-    } catch (e) {}
-
-    if (data.type === 'jotted-dom-ready') {
-      this.lastCallback()
-    }
+    this.jotted.trigger('render', this.frameContent)
   }
 }

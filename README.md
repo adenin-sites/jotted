@@ -1,19 +1,6 @@
 # Jotted
 
-[![Build Status](https://api.travis-ci.org/ghinda/jotted.svg)](https://travis-ci.org/ghinda/jotted)
-
 Environment for showcasing HTML, CSS and JavaScript, with editable source. It's like [JSFiddle](https://jsfiddle.net/)  or [JS Bin](http://jsbin.com/) for self-hosted demos.
-
-## Install
-
-* [npm](https://www.npmjs.com/package/jotted): `npm install --save jotted`
-* [Bower](http://bower.io/): `bower install --save jotted`
-* [jsDelivr](https://www.jsdelivr.com/projects/jotted):
-
-``` html
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/jotted@latest/jotted.min.css">
-<script src="https://cdn.jsdelivr.net/npm/jotted@latest/jotted.min.js"></script>
-```
 
 ## Features
 
@@ -246,7 +233,6 @@ jotted.done('done', function (errs, params) {
 })
 ```
 
-
 ### Examples
 
 For a preprocessor plugin, see the [less](src/plugins/less.js) plugin.
@@ -270,12 +256,6 @@ For a code editor plugin, see the [codemirror](src/plugins/codemirror.js) plugin
 * Follow the [JavaScript Standard Style](https://github.com/feross/standard).
 * Send pull requests.
 * Thanks! :beers:
-
-
-## Who's using it
-
-* [educative.io](https://www.educative.io/)
-
 
 ## License
 

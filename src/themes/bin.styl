@@ -17,7 +17,7 @@
 .jotted-theme-bin .jotted-nav-item {
   background: transparent;
   pointer-events: none;
-
+  text-transform: uppercase;
   text-align: center;
 }
 
@@ -33,9 +33,7 @@
 }
 
 .jotted-theme-bin .jotted-pane-result,
-.jotted-theme-bin.jotted-has-html .jotted-pane-html,
-.jotted-theme-bin.jotted-has-css .jotted-pane-css,
-.jotted-theme-bin.jotted-has-js .jotted-pane-js {
+div.jotted-theme-bin div[class*="jotted-pane"] {
   position: relative;
   float: left;
   visibility: visible;
@@ -49,27 +47,10 @@
 /* widths
  */
 
-.jotted-theme-bin.jotted-has-html .jotted-nav-item,
-.jotted-theme-bin.jotted-has-css .jotted-nav-item,
-.jotted-theme-bin.jotted-has-js .jotted-nav-item,
-.jotted-theme-bin.jotted-has-html .jotted-pane,
-.jotted-theme-bin.jotted-has-css .jotted-pane,
-.jotted-theme-bin.jotted-has-js .jotted-pane {
-  width: 50%;
-}
-
-.jotted-theme-bin.jotted-has-html.jotted-has-css .jotted-nav-item,
-.jotted-theme-bin.jotted-has-html.jotted-has-js .jotted-nav-item,
-.jotted-theme-bin.jotted-has-css.jotted-has-js .jotted-nav-item,
-.jotted-theme-bin.jotted-has-html.jotted-has-css .jotted-pane,
-.jotted-theme-bin.jotted-has-html.jotted-has-js .jotted-pane,
-.jotted-theme-bin.jotted-has-css.jotted-has-js .jotted-pane {
-  width: 33.33%;
-}
-
-.jotted-theme-bin.jotted-has-html.jotted-has-css.jotted-has-js .jotted-nav-item,
-.jotted-theme-bin.jotted-has-html.jotted-has-css.jotted-has-js .jotted-pane {
-  width: 25%;
+.jotted-theme-bin .jotted-pane,
+.jotted-theme-bin .jotted-nav-item {
+  width: 33.33% !important;
+  display: block;
 }
 
 /* console plugin support

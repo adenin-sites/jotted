@@ -1,43 +1,37 @@
 /* template
  */
 
-export function container () {
+export function container (type1, type2, type3 = 'json') {
   return `
     <ul class="jotted-nav">
+      <li class="jotted-nav-item jotted-nav-item-input">
+        <a href="#" data-jotted-type="${type1}">
+          Data
+        </a>
+      </li>
+      <li class="jotted-nav-item jotted-nav-item-template">
+        <a href="#" data-jotted-type="${type2}">
+          Template
+        </a>
+      </li>
       <li class="jotted-nav-item jotted-nav-item-result">
         <a href="#" data-jotted-type="result">
-          Result
+          Result (${type2})
         </a>
       </li>
-      <li class="jotted-nav-item jotted-nav-item-html">
-        <a href="#" data-jotted-type="html">
-          HTML
-        </a>
-      </li>
-      <li class="jotted-nav-item jotted-nav-item-css">
-        <a href="#" data-jotted-type="css">
-          CSS
-        </a>
-      </li>
-      <li class="jotted-nav-item jotted-nav-item-js">
-        <a href="#" data-jotted-type="js">
-          JavaScript
-        </a>
-      </li>
-    </ul>
-    <div class="jotted-pane jotted-pane-result"><iframe></iframe></div>
-    <div class="jotted-pane jotted-pane-html"></div>
-    <div class="jotted-pane jotted-pane-css"></div>
-    <div class="jotted-pane jotted-pane-js"></div>
+    </ul>   
+    <div class="jotted-pane jotted-pane-input" data-jotted-type="${type1}" data-jotted-role="input"></div>
+    <div class="jotted-pane jotted-pane-template" data-jotted-type="${type2}" data-jotted-role="template"></div>
+    <div class="jotted-pane jotted-pane-result" data-jotted-type="${type3}" data-jotted-role="result"><div class="jotted-editor jotted-editor-${type3}"><textarea data-jotted-type="${type3}" data-jotted-role="result" data-jotted-file=""></textarea><div class="jotted-status"></div></div></div>
   `
 }
 
-export function paneActiveClass (type) {
-  return `jotted-pane-active-${type}`
+export function paneActiveClass (role) {
+  return `jotted-pane-active-${role}`
 }
 
 export function containerClass () {
-  return `jotted`
+  return 'jotted'
 }
 
 export function hasFileClass (type) {
@@ -48,9 +42,9 @@ export function editorClass (type) {
   return `jotted-editor jotted-editor-${type}`
 }
 
-export function editorContent (type, fileUrl = '') {
+export function editorContent (type, role, fileUrl = '') {
   return `
-    <textarea data-jotted-type="${type}" data-jotted-file="${fileUrl}"></textarea>
+    <textarea data-jotted-type="${type}" data-jotted-role="${role}" data-jotted-file="${fileUrl}"></textarea>
     <div class="jotted-status"></div>
   `
 }
